@@ -59,6 +59,16 @@ export interface CapaExportRow {
   verifiedAt: string;
 }
 
+type IncidentStatusGroupRow = { status: string; _count: { _all: number } };
+type IncidentSeverityGroupRow = { severity: Severity; _count: { _all: number } };
+type IncidentProblemScopeGroupRow = { problemScope: ProblemScope; _count: { _all: number } };
+type IncidentAgingCandidateRow = { id: string; createdAt: Date };
+type EquipmentStatusGroupRow = { status: string; _count: { _all: number } };
+type MaintenanceCostPerCampusRow = { campusId: string; _sum: { cost: number | null } };
+type MaintenanceCostPerEquipmentRow = { equipmentId: string | null; _sum: { cost: number | null } };
+type CampusLookupRow = { id: string; name: string; code: string };
+type EquipmentLookupRow = { id: string; name: string; code: string };
+
 function getAgingCategory(openHours: number): AgingCategory {
   if (openHours < 24) return '0-24h';
   if (openHours < 72) return '24-72h';
@@ -102,15 +112,21 @@ export class ReportService {
           createdAt: true,
         },
       }),
-    ]);
+    ]) as [
+      number,
+      IncidentStatusGroupRow[],
+      IncidentSeverityGroupRow[],
+      IncidentProblemScopeGroupRow[],
+      IncidentAgingCandidateRow[],
+    ];
 
-    const statusMap = statusGroups.reduce<Record<string, number>>((acc, group) => {
+    const statusMap = statusGroups.reduce<Record<string, number>>((acc: Record<string, number>, group: IncidentStatusGroupRow) => {
       acc[group.status] = group._count._all;
       return acc;
     }, {});
 
     const nowTs = Date.now();
-    const agingDetails = agingCandidates.map((incident) => {
+    const agingDetails = agingCandidates.map((incident: IncidentAgingCandidateRow) => {
       const openHours = Number(((nowTs - incident.createdAt.getTime()) / (1000 * 60 * 60)).toFixed(2));
       return {
         incidentId: incident.id,
@@ -120,7 +136,7 @@ export class ReportService {
     });
 
     const agingCountMap = agingDetails.reduce<Record<AgingCategory, number>>(
-      (acc, item) => {
+      (acc: Record<AgingCategory, number>, item) => {
         acc[item.agingCategory] += 1;
         return acc;
       },
@@ -141,11 +157,11 @@ export class ReportService {
         verified: statusMap.VERIFIED || 0,
         closed: statusMap.CLOSED || 0,
       },
-      bySeverity: severityGroups.map((group) => ({
+      bySeverity: severityGroups.map((group: IncidentSeverityGroupRow) => ({
         severity: group.severity,
         count: group._count._all,
       })),
-      byProblemScope: scopeGroups.map((group) => ({
+      byProblemScope: scopeGroups.map((group: IncidentProblemScopeGroupRow) => ({
         problemScope: group.problemScope,
         count: group._count._all,
       })),
@@ -194,9 +210,9 @@ export class ReportService {
             },
           },
         }),
-      ]);
+      ]) as [number, EquipmentStatusGroupRow[], number, number];
 
-    const statusMap = statusGroups.reduce<Record<string, number>>((acc, group) => {
+    const statusMap = statusGroups.reduce<Record<string, number>>((acc: Record<string, number>, group: EquipmentStatusGroupRow) => {
       acc[group.status] = group._count._all;
       return acc;
     }, {});
@@ -254,12 +270,17 @@ export class ReportService {
           AND m."returned_from_vendor_at" IS NOT NULL
         GROUP BY m."campus_id"
       `),
-    ]);
+    ]) as [
+      MaintenanceCostPerCampusRow[],
+      MaintenanceCostPerEquipmentRow[],
+      Array<{ mttr_hours: number | null }>,
+      Array<{ campus_id: string; mttr_hours: number | null }>,
+    ];
 
-    const campusIds = costPerCampus.map((item) => item.campusId);
+    const campusIds = costPerCampus.map((item: MaintenanceCostPerCampusRow) => item.campusId);
     const equipmentIds = costPerEquipment
-      .map((item) => item.equipmentId)
-      .filter((value): value is string => Boolean(value));
+      .map((item: MaintenanceCostPerEquipmentRow) => item.equipmentId)
+      .filter((value: string | null): value is string => Boolean(value));
 
     const [campuses, equipments] = await Promise.all([
       prisma.campus.findMany({
@@ -270,16 +291,19 @@ export class ReportService {
         where: { id: { in: equipmentIds } },
         select: { id: true, name: true, code: true },
       }),
-    ]);
+    ]) as [CampusLookupRow[], EquipmentLookupRow[]];
 
-    const campusMap = new Map(campuses.map((item) => [item.id, item]));
-    const equipmentMap = new Map(equipments.map((item) => [item.id, item]));
+    const campusMap = new Map(campuses.map((item: CampusLookupRow) => [item.id, item] as const));
+    const equipmentMap = new Map(equipments.map((item: EquipmentLookupRow) => [item.id, item] as const));
     const mttrPerCampusMap = new Map(
-      mttrPerCampusRows.map((row) => [row.campus_id, Number(row.mttr_hours || 0)])
+      mttrPerCampusRows.map((row: { campus_id: string; mttr_hours: number | null }) => [
+        row.campus_id,
+        Number(row.mttr_hours || 0),
+      ])
     );
 
     return {
-      totalCostPerCampus: costPerCampus.map((item) => {
+      totalCostPerCampus: costPerCampus.map((item: MaintenanceCostPerCampusRow) => {
         const campus = campusMap.get(item.campusId);
         return {
           campusId: item.campusId,
@@ -290,8 +314,10 @@ export class ReportService {
         };
       }),
       totalCostPerEquipment: costPerEquipment
-        .filter((item): item is typeof item & { equipmentId: string } => Boolean(item.equipmentId))
-        .map((item) => {
+        .filter((item: MaintenanceCostPerEquipmentRow): item is MaintenanceCostPerEquipmentRow & { equipmentId: string } =>
+          Boolean(item.equipmentId)
+        )
+        .map((item: MaintenanceCostPerEquipmentRow & { equipmentId: string }) => {
           const equipment = equipmentMap.get(item.equipmentId);
           return {
             equipmentId: item.equipmentId,
@@ -322,7 +348,15 @@ export class ReportService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return incidents.map((incident) => ({
+    return incidents.map((incident: {
+      id: string;
+      severity: Severity;
+      rootCause: string | null;
+      correctiveAction: string | null;
+      preventiveAction: string | null;
+      resolvedAt: Date | null;
+      verifiedAt: Date | null;
+    }) => ({
       incidentId: incident.id,
       severity: incident.severity,
       rootCause: incident.rootCause || '',
