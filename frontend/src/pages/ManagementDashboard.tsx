@@ -3,6 +3,8 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import {
   reportsApi,
+} from '../api/reports';
+import type {
   IncidentSummaryData,
   EquipmentHealthData,
   MaintenanceCostData,

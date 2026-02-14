@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-import { useFetch } from '../hooks/useFetch';
 import { useForm } from '../hooks/useForm';
 import { authApi } from '../api/auth';
 import { ROLE_LABELS } from '../utils/constants';
-import { Role } from '../types';
+import type { Role } from '../types';
 
 export function Users() {
   const [isModalOpen, setIsModalOpen] = useState(false);

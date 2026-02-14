@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Select } from '../components/ui/Select';
 import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useFetch } from '../hooks/useFetch';
@@ -10,17 +9,6 @@ import { useForm } from '../hooks/useForm';
 import { eventsApi } from '../api/events';
 import { inventoryApi } from '../api/inventory';
 import { useAuth } from '../contexts/AuthContext';
-
-interface TimeSlot {
-  time: string;
-  events: Array<{
-    id: string;
-    title: string;
-    location: string;
-    startDate: string;
-    endDate: string;
-  }>;
-}
 
 export function Monitoring() {
   const { hasRole } = useAuth();

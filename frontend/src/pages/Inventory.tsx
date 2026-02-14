@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -9,7 +9,7 @@ import { useFetch } from '../hooks/useFetch';
 import { useForm } from '../hooks/useForm';
 import { inventoryApi } from '../api/inventory';
 import { useAuth } from '../contexts/AuthContext';
-import { Equipment, Lab } from '../types';
+import type { Equipment, EquipmentStatus } from '../types';
 
 export function Inventory() {
   const { hasRole } = useAuth();
@@ -18,7 +18,7 @@ export function Inventory() {
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
 
   const { data: equipmentData, execute: refetchEquipment } = useFetch(() => inventoryApi.getAllEquipment());
-  const { data: labsData, execute: refetchLabs } = useFetch(() => inventoryApi.getAllLabs());
+  const { data: labsData } = useFetch(() => inventoryApi.getAllLabs());
 
   const labOptions = labsData?.labs.map(lab => ({ value: lab.id, label: lab.name })) || [];
   const statusOptions = [
@@ -35,7 +35,7 @@ export function Inventory() {
       category: '',
       description: '',
       labId: '',
-      status: 'AVAILABLE',
+      status: 'AVAILABLE' as EquipmentStatus,
     },
     onSubmit: async (values) => {
       if (selectedEquipment) {

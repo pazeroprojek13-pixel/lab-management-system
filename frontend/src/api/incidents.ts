@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Incident, IncidentStatus } from '../types';
+import type { Incident, IncidentStatus } from '../types';
 
 export const incidentsApi = {
   getAll: async (params?: { status?: string; labId?: string }): Promise<{ incidents: Incident[] }> => {

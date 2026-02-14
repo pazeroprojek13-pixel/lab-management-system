@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -10,12 +10,11 @@ import { useForm } from '../hooks/useForm';
 import { maintenanceApi } from '../api/maintenance';
 import { inventoryApi } from '../api/inventory';
 import { useAuth } from '../contexts/AuthContext';
-import { Maintenance, MaintenanceStatus } from '../types';
+import type { MaintenanceStatus } from '../types';
 
 export function MaintenancePage() {
   const { hasRole } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('');
 
   const { data: maintenanceData, execute: refetch } = useFetch(() => maintenanceApi.getAll({ status: filterStatus }));

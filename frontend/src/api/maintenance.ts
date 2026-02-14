@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Maintenance, MaintenanceStatus } from '../types';
+import type { Maintenance } from '../types';
 
 export const maintenanceApi = {
   getAll: async (params?: { status?: string; labId?: string }): Promise<{ maintenances: Maintenance[] }> => {

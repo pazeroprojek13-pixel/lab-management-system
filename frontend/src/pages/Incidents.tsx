@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -10,12 +10,11 @@ import { useForm } from '../hooks/useForm';
 import { incidentsApi } from '../api/incidents';
 import { inventoryApi } from '../api/inventory';
 import { useAuth } from '../contexts/AuthContext';
-import { Incident, IncidentStatus } from '../types';
+import type { IncidentStatus } from '../types';
 
 export function Incidents() {
   const { hasRole } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('');
 
   const { data: incidentsData, execute: refetch } = useFetch(() => incidentsApi.getAll({ status: filterStatus }));

@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Event } from '../types';
+import type { Event } from '../types';
 
 export const eventsApi = {
   getAll: async (): Promise<{ events: Event[] }> => {
@@ -12,7 +12,7 @@ export const eventsApi = {
     return response.data;
   },
 
-  create: async (data: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>): Promise<{ message: string; event: Event }> => {
+  create: async (data: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'createdById'>): Promise<{ message: string; event: Event }> => {
     const response = await apiClient.post('/events', data);
     return response.data;
   },

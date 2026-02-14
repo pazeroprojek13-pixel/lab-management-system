@@ -27,7 +27,6 @@ export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   
   // Maintenance Status
   SCHEDULED: { bg: 'bg-blue-100', text: 'text-blue-800' },
-  IN_PROGRESS: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
   COMPLETED: { bg: 'bg-green-100', text: 'text-green-800' },
   CANCELLED: { bg: 'bg-gray-100', text: 'text-gray-800' },
 };
