@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(tasklist:*)",
+      "Bash(kill:*)",
+      "Bash(cmd /c:*)",
+      "Bash(echo:*)",
+      "Bash(powershell -Command \"Get-Process | Where-Object { $_Modules.FileName -like ''*query_engine-windows*'' } | Select-Object -Property Id, ProcessName\")",
+      "Bash(npx prisma migrate diff:*)",
+      "Bash(npx prisma migrate resolve:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx prisma migrate deploy:*)"
+    ]
+  }
+}

@@ -1,0 +1,382 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Campus {
+  id          String        @id @default(cuid())
+  name        String
+  code        String        @unique
+  location    String?
+  description String?
+  isDeleted   Boolean       @default(false) @map("is_deleted")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  users        User[]
+  labs         Lab[]
+  events       Event[]
+  incidents    Incident[]
+  maintenances Maintenance[]
+  schedules    Schedule[]
+  equipments   Equipment[]
+  auditLogs    AuditLog[]
+  notifications Notification[]
+
+  @@index([code])
+  @@index([isDeleted])
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  password        String
+  name            String
+  role            Role          @default(STUDENT)
+  campusId        String?       @map("campus_id")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  bookings        Booking[]
+  events          Event[]
+  reportedIncidents Incident[]  @relation("ReportedIncidents")
+  assignedIncidents Incident[]  @relation("AssignedIncidents")
+  maintenances    Maintenance[]
+  schedules       Schedule[]
+  auditLogs       AuditLog[]     @relation("PerformedAuditLogs")
+  campus          Campus?       @relation(fields: [campusId], references: [id])
+
+  @@index([campusId])
+}
+
+model Lab {
+  id           String        @id @default(cuid())
+  name         String
+  code         String
+  type         String?
+  capacity     Int
+  location     String?
+  description  String?
+  status       LabStatus     @default(ACTIVE)
+  isDeleted    Boolean       @default(false) @map("is_deleted")
+  campusId     String        @map("campus_id")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  bookings     Booking[]
+  equipments   Equipment[]
+  incidents    Incident[]
+  maintenances Maintenance[]
+  schedules    Schedule[]
+  campus       Campus        @relation(fields: [campusId], references: [id])
+
+  @@unique([campusId, code])
+  @@index([campusId])
+  @@index([isDeleted])
+}
+
+model Equipment {
+  id              String          @id @default(cuid())
+  code            String
+  name            String
+  category        String
+  brand           String?
+  serialNumber    String?         @map("serial_number")
+  purchaseDate    DateTime?       @map("purchase_date")
+  warrantyEndDate DateTime?       @map("warranty_end_date")
+  status          EquipmentStatus @default(ACTIVE)
+  condition       String?
+  description     String?
+  isDeleted       Boolean         @default(false) @map("is_deleted")
+  labId           String
+  campusId        String          @map("campus_id")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  lab             Lab             @relation(fields: [labId], references: [id], onDelete: Cascade)
+  campus          Campus          @relation(fields: [campusId], references: [id])
+  incidents       Incident[]
+  maintenances    Maintenance[]
+
+  @@unique([campusId, code])
+  @@index([campusId])
+  @@index([labId])
+  @@index([status])
+  @@index([warrantyEndDate])
+  @@index([isDeleted])
+}
+
+model Booking {
+  id        String        @id @default(cuid())
+  startTime DateTime
+  endTime   DateTime
+  purpose   String
+  status    BookingStatus @default(PENDING)
+  userId    String
+  labId     String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  lab       Lab           @relation(fields: [labId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([labId])
+  @@index([userId])
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  day       Day
+  startTime String
+  endTime   String
+  subject   String
+  lecturer  String
+  userId    String
+  labId     String
+  campusId  String?  @map("campus_id")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lab       Lab      @relation(fields: [labId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus    Campus?  @relation(fields: [campusId], references: [id])
+
+  @@unique([labId, day, startTime])
+  @@index([campusId])
+  @@index([labId])
+  @@index([userId])
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+  createdById String
+  campusId    String?  @map("campus_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  campus      Campus?  @relation(fields: [campusId], references: [id])
+
+  @@index([campusId])
+  @@index([createdById])
+}
+
+model Incident {
+  id                String         @id @default(cuid())
+  problemScope      ProblemScope   @default(OTHER) @map("problem_scope")
+  category          String
+  severity          Severity       @default(MEDIUM)
+  description       String
+  status            IncidentStatus @default(OPEN)
+  rootCause         String?        @map("root_cause")
+  correctiveAction  String?        @map("corrective_action")
+  preventiveAction  String?        @map("preventive_action")
+  resolvedAt        DateTime?      @map("resolved_at")
+  verifiedAt        DateTime?      @map("verified_at")
+  isDeleted         Boolean        @default(false) @map("is_deleted")
+  
+  // Relations
+  equipmentId       String?
+  labId             String?
+  campusId          String         @map("campus_id")
+  reportedById      String         @map("reported_by_id")
+  assignedToId      String?        @map("assigned_to_id")
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  // Relations
+  equipment         Equipment?     @relation(fields: [equipmentId], references: [id])
+  lab               Lab?           @relation(fields: [labId], references: [id])
+  campus            Campus         @relation(fields: [campusId], references: [id])
+  reportedBy        User           @relation("ReportedIncidents", fields: [reportedById], references: [id], onDelete: Cascade)
+  assignedTo        User?          @relation("AssignedIncidents", fields: [assignedToId], references: [id])
+  maintenances      Maintenance[]
+
+  @@index([campusId])
+  @@index([status])
+  @@index([severity])
+  @@index([reportedById])
+  @@index([assignedToId])
+  @@index([resolvedAt])
+  @@index([isDeleted])
+  @@index([equipmentId])
+  @@index([labId])
+}
+
+model Maintenance {
+  id                   String            @id @default(cuid())
+  title                String
+  status               MaintenanceStatus @default(PENDING)
+  isDeleted            Boolean           @default(false) @map("is_deleted")
+
+  // Vendor workflow fields
+  vendorName           String?           @map("vendor_name")
+  sentToVendorAt       DateTime?         @map("sent_to_vendor_at")
+  returnedFromVendorAt DateTime?         @map("returned_from_vendor_at")
+  cost                 Decimal?
+  resolutionNotes      String?           @map("resolution_notes")
+
+  // Required relation keys
+  campusId             String            @map("campus_id")
+  equipmentId          String?           @map("equipment_id")  // validated required at API
+  incidentId           String?           @map("incident_id")   // validated required at API
+  createdById          String            @map("created_by_id")
+
+  // Legacy / optional fields kept for backward compat
+  description          String?
+  scheduledDate        DateTime?         @map("scheduled_date")
+  completedDate        DateTime?         @map("completed_date")
+  notes                String?
+  labId                String?           @map("lab_id")
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  incident             Incident?         @relation(fields: [incidentId], references: [id])
+  equipment            Equipment?        @relation(fields: [equipmentId], references: [id])
+  campus               Campus            @relation(fields: [campusId], references: [id])
+  createdBy            User              @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  lab                  Lab?              @relation(fields: [labId], references: [id])
+
+  @@index([campusId])
+  @@index([equipmentId])
+  @@index([incidentId])
+  @@index([status])
+  @@index([sentToVendorAt])
+  @@index([isDeleted])
+  @@index([createdById])
+}
+
+model AuditLog {
+  id          String          @id @default(cuid())
+  campusId    String          @map("campus_id")
+  entityType  AuditEntityType @map("entity_type")
+  entityId    String          @map("entity_id")
+  action      AuditAction
+  oldValue    Json?           @map("old_value")
+  newValue    Json?           @map("new_value")
+  performedBy String          @map("performed_by")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  campus          Campus @relation(fields: [campusId], references: [id])
+  performedByUser User   @relation("PerformedAuditLogs", fields: [performedBy], references: [id], onDelete: Cascade)
+
+  @@index([campusId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([action])
+  @@index([performedBy])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  campusId  String           @map("campus_id")
+  type      NotificationType
+  entityId  String           @map("entity_id")
+  message   String
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  campus Campus @relation(fields: [campusId], references: [id], onDelete: Cascade)
+
+  @@index([campusId])
+  @@index([type])
+  @@index([entityId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+enum Role {
+  SUPER_ADMIN
+  DEVELOPER
+  ADMIN
+  LAB_ASSISTANT
+  LECTURER
+  STUDENT
+}
+
+enum LabStatus {
+  ACTIVE
+  MAINTENANCE
+  INACTIVE
+}
+
+enum EquipmentStatus {
+  ACTIVE
+  DAMAGED
+  MAINTENANCE
+  RETIRED
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum Day {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum IncidentStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  VERIFIED
+  CLOSED
+}
+
+enum ProblemScope {
+  EQUIPMENT
+  LAB
+  INFRASTRUCTURE
+  OTHER
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MaintenanceStatus {
+  PENDING
+  SENT
+  RETURNED
+  COMPLETED
+}
+
+enum AuditEntityType {
+  INCIDENT
+  EQUIPMENT
+  MAINTENANCE
+  LAB
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+}
+
+enum NotificationType {
+  WARRANTY_ALERT
+  INCIDENT_ESCALATION
+  MAINTENANCE_OVERDUE
+}

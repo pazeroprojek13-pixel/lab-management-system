@@ -1,0 +1,27 @@
+{
+  "functions": {
+    "api/[...all].ts": {
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/[...all].ts"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/warranty",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/incident-escalation",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/maintenance-overdue",
+      "schedule": "5 * * * *"
+    }
+  ]
+}
